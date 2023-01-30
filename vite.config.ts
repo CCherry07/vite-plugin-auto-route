@@ -4,6 +4,9 @@ import VitePluginAutoRoute from "./plugin";
 export default defineConfig({
   plugins: [
     vue(),
-    VitePluginAutoRoute()
+    VitePluginAutoRoute({
+      pagesDir: "src/pages",
+      routesDir: "src/router",
+    })
   ]
 });
