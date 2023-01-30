@@ -1,6 +1,6 @@
 
 <template>
-  <div> default </div>
+  <div> ./About.vue </div>
 </template>
 
 <script setup>
