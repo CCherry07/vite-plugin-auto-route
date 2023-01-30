@@ -1,3 +1,11 @@
+
 <template>
-  <h2> main </h2>
+  <div> default </div>
 </template>
+
+<script setup>
+
+</script>
+<style scoped>
+
+</style>
