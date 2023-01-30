@@ -6,6 +6,8 @@ interface Options {
   pagesDir: string,
   routesDir: string,
   templatePath?: string,
+  getFilesInfo?: string,
+  postRoute?: string
 }
 
 const defaultTemplate = `
@@ -22,7 +24,7 @@ const defaultTemplate = `
 `
 
 const VitePluginAutoRoute = (options?: Options): Plugin => {
-  const { templatePath, routesDir = 'src/routes' } = options || {}
+  const { templatePath, pagesDir = 'src/pages', routesDir = 'src/routes', postRoute = '/add/route', getFilesInfo = '/files/info' } = options || {}
   const template = templatePath ? fs.readFileSync(templatePath, 'utf-8') : defaultTemplate
   let alias
   return {
@@ -62,6 +64,30 @@ const VitePluginAutoRoute = (options?: Options): Plugin => {
     configureServer(server) {
       server.middlewares.use((req, res, next) => {
         // TODO: 根据请求的data，生成对应的路由，及其文件
+        if (req.url === postRoute) {
+          let body = ''
+          req.on('data', (chunk) => {
+            body += chunk
+          })
+          req.on('end', () => {
+            const { name, path } = JSON.parse(body)
+            const filePath = path.resolve(process.cwd(), routesDir, `${path}/${name}.vue`)
+            if (!fs.existsSync(filePath)) {
+              writeFileRecursive(filePath, template.replace("name", name))
+            }
+            // 写入route 信息
+            const routerPath = path.resolve(process.cwd(), routesDir)
+            const currentFile = fs.readdirSync(routerPath).find(item => item.includes('index')) // 获取文件夹下的文件
+            const context = fs.readFileSync(fs.statSync(routerPath).isDirectory() ? `${routerPath}/${currentFile}` : routerPath, 'utf-8')
+            const reg = /(?<=routes: \[)([\s\S]*?)(?=\])/g
+            const routeList = context.match(reg)?.[0].split(',').map(item => item.trim())
+            // console.log(routeList);
+          })
+        } else if (req.url === getFilesInfo) {
+          const pagesPath = path.resolve(process.cwd(), pagesDir)
+          const filesInfo = fs.readdirSync(pagesPath) // 获取文件夹下的文件
+          res.end(JSON.stringify(filesInfo))
+        }
         next()
       })
     }

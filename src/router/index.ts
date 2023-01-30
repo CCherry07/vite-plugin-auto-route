@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { createRouter, createWebHistory } from 'vue-router'
 const About = () => import('../About.vue')
 const router = createRouter({
