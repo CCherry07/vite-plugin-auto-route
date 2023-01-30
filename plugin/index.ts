@@ -8,7 +8,7 @@ interface Options {
 
 const defaultTemplate = `
 <template>
-  <div> default </div>
+  <div> name </div>
 </template>
 
 <script setup>
@@ -22,18 +22,22 @@ const defaultTemplate = `
 const VitePluginAutoRoute = (options?: Options): Plugin => {
   const { templatePath } = options || {}
   const template = templatePath ? fs.readFileSync(templatePath, 'utf-8') : defaultTemplate
+  let alias
   return {
     name: 'vite-plugin-auto-route',
     configResolved(config) {
       // console.log('configResolved', config)
       // TODO: 读取文件别名 配置
+      alias = config.resolve?.alias
     },
     configureServer(server) {
       server.middlewares.use((req, res, next) => {
         // handle router
         // @ts-ignore
-        if (req.url.includes('router')) {
-          const context = fs.readFileSync('./src/router.ts', 'utf-8')
+        if (req.url.includes('router') && !req.url.includes('node_modules')) {
+          const routerPath = path.resolve(process.cwd(), `.${req.url!}`)
+          console.log(routerPath)
+          const context = fs.readFileSync(routerPath, 'utf-8')
           const reg = /(?<=routes: \[)([\s\S]*?)(?=\])/g
           // 匹配 import 语句
           const importReg = /(?<=import\()(.*?)(?=\))/g
@@ -41,10 +45,9 @@ const VitePluginAutoRoute = (options?: Options): Plugin => {
           // const routeList = context.match(reg)?.[0].split(',').map(item => item.trim())
           // 根据文件名 创建文件
           importList?.forEach(item => {
-            const filePath = path.resolve(__dirname, `../src/${item}`)
-            console.log(filePath);
+            const filePath = path.resolve(process.cwd(), `./src/${item}`)
             if (!fs.existsSync(filePath)) {
-              writeFileRecursive(`./src/${item}`, template)
+              writeFileRecursive(`./src/${item}`, template.replace("name", item))
             }
           })
         }
