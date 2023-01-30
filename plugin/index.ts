@@ -1,11 +1,32 @@
 import { Plugin } from 'vite'
 import fs from 'fs'
 import path from 'path'
-const VitePluginAutoRoute = (options?): Plugin => {
+
+interface Options {
+  templatePath: string
+}
+
+const defaultTemplate = `
+<template>
+  <div> default </div>
+</template>
+
+<script setup>
+
+</script>
+<style scoped>
+
+</style>
+`
+
+const VitePluginAutoRoute = (options?: Options): Plugin => {
+  const { templatePath } = options || {}
+  const template = templatePath ? fs.readFileSync(templatePath, 'utf-8') : defaultTemplate
   return {
     name: 'vite-plugin-auto-route',
     configResolved(config) {
       // console.log('configResolved', config)
+      // TODO: 读取文件别名 配置
     },
     configureServer(server) {
       server.middlewares.use((req, res, next) => {
@@ -23,7 +44,7 @@ const VitePluginAutoRoute = (options?): Plugin => {
             const filePath = path.resolve(__dirname, `../src/${item}`)
             console.log(filePath);
             if (!fs.existsSync(filePath)) {
-              writeFileRecursive(`./src/${item}`)
+              writeFileRecursive(`./src/${item}`, template)
             }
           })
         }
