@@ -85,8 +85,11 @@ const VitePluginAutoRoute = (options?: Options): Plugin => {
           })
         } else if (req.url === getFilesInfo) {
           const pagesPath = path.resolve(process.cwd(), pagesDir)
-          const filesInfo = fs.readdirSync(pagesPath) // 获取文件夹下的文件
-          res.end(JSON.stringify(filesInfo))
+          const treeFiles = processDir(pagesPath)
+          req.headers['content-type'] = 'application/json'
+          console.log(treeFiles);
+          res.end(JSON.stringify(treeFiles))
+          return
         }
         next()
       })
@@ -104,6 +107,44 @@ const writeFileRecursive = function (path, buffer = '', callback?) {
     });
   });
 }
+function getPartPath(dirPath) {
+  let base = basepath.split(/\/|\\/g);
+  dirPath = dirPath.split(/\/|\\/g);
+  while (base.length && dirPath.length && base[0] === dirPath[0]) {
+    base.shift();
+    dirPath.shift();
+  }
+  return dirPath.join("/");
+}
+let filterFile = ["node_modules", "\\..*"]; //过滤文件名，使用，隔开
+let isFullPath = true; //是否输出完整路径
+let basepath = "../"; //解析目录路径
+function isFilterPath(item) {
+  for (let i = 0; i < filterFile.length; i++) {
+    let reg = filterFile[i];
+    if (item.match(reg) && item.match(reg)[0] === item) return true;
+  }
+  return false;
+}
 
+function processDir(dirPath, dirTree = []) {
+  let list = fs.readdirSync(dirPath);
+  list = list.filter((item) => {
+    return !isFilterPath(item);
+  });
+  list.forEach((itemPath) => {
+    const fullPath = path.join(dirPath, itemPath);
+    const fileStat = fs.statSync(fullPath);
+    const isFile = fileStat.isFile();
+    const dir = {
+      name: (isFullPath ? getPartPath(fullPath) : itemPath).replace(process.cwd(), ""),
+    };
+    if (!isFile) {
+      dir.children = processDir(fullPath, []);
+    }
+    dirTree.push(dir);
+  });
+  return dirTree;
+}
 
 export default VitePluginAutoRoute

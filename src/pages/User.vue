@@ -1,6 +1,6 @@
 
 <template>
-  <div> ../Home.vue </div>
+  <div> ../pages/User.vue </div>
 </template>
 
 <script setup>
