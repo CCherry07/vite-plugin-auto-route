@@ -14,7 +14,7 @@ npm i vite-plugin-auto-route -D
 // vite.config.js
 import { defineConfig } from "vite";
 import vue from '@vitejs/plugin-vue'
-import VitePluginAutoRoute from "./plugin";
+import VitePluginAutoRoute from "vite-plugin-auto-route";
 export default defineConfig({
   plugins: [
     vue(),
