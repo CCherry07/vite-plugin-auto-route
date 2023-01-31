@@ -119,6 +119,7 @@ function getPartPath(dirPath) {
 let filterFile = ["node_modules", "\\..*"]; //过滤文件名，使用，隔开
 let isFullPath = true; //是否输出完整路径
 let basepath = "../"; //解析目录路径
+let pagesDir = "src/pages"; //解析目录路径
 function isFilterPath(item) {
   for (let i = 0; i < filterFile.length; i++) {
     let reg = filterFile[i];
@@ -137,7 +138,7 @@ function processDir(dirPath, dirTree = []) {
     const fileStat = fs.statSync(fullPath);
     const isFile = fileStat.isFile();
     const dir = {
-      name: (isFullPath ? getPartPath(fullPath) : itemPath).replace(process.cwd(), ""),
+      name: (isFullPath ? getPartPath(fullPath) : itemPath).replace(process.cwd() + `/${pagesDir}`, ""),
     };
     if (!isFile) {
       dir.children = processDir(fullPath, []);
