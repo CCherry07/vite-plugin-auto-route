@@ -107,6 +107,11 @@ const writeFileRecursive = function (path, buffer = '', callback?) {
     });
   });
 }
+let filterFile = ["node_modules", "\\..*"]; //过滤文件名，使用，隔开
+let isFullPath = true; //是否输出完整路径
+let basepath = "../"; //解析目录路径
+let pagesDir = "src/pages"; //解析目录路径
+
 function getPartPath(dirPath) {
   let base = basepath.split(/\/|\\/g);
   dirPath = dirPath.split(/\/|\\/g);
@@ -116,10 +121,7 @@ function getPartPath(dirPath) {
   }
   return dirPath.join("/");
 }
-let filterFile = ["node_modules", "\\..*"]; //过滤文件名，使用，隔开
-let isFullPath = true; //是否输出完整路径
-let basepath = "../"; //解析目录路径
-let pagesDir = "src/pages"; //解析目录路径
+
 function isFilterPath(item) {
   for (let i = 0; i < filterFile.length; i++) {
     let reg = filterFile[i];
@@ -128,7 +130,7 @@ function isFilterPath(item) {
   return false;
 }
 
-function processDir(dirPath, dirTree = []) {
+function processDir(dirPath, dirTree: any = []) {
   let list = fs.readdirSync(dirPath);
   list = list.filter((item) => {
     return !isFilterPath(item);
@@ -139,6 +141,7 @@ function processDir(dirPath, dirTree = []) {
     const isFile = fileStat.isFile();
     const dir = {
       name: (isFullPath ? getPartPath(fullPath) : itemPath).replace(process.cwd() + `/${pagesDir}`, ""),
+      children: [],
     };
     if (!isFile) {
       dir.children = processDir(fullPath, []);
