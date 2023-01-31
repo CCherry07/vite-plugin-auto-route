@@ -2,12 +2,18 @@ import { Plugin } from 'vite'
 import fs from 'fs'
 import path from 'path'
 
+let filterFile = ["node_modules", "\\..*"]; //过滤文件名，使用，隔开
+let basepath = "../"; //解析目录路径
+let isFullPath = true; //是否显示全路径
+let rootPath = 'src'
+
 interface Options {
   pagesDir: string,
   routesDir: string,
   templatePath?: string,
   getFilesInfo?: string,
-  postRoute?: string
+  postRoute?: string,
+  showFullPath?: boolean,
 }
 
 const defaultTemplate = `
@@ -24,7 +30,16 @@ const defaultTemplate = `
 `
 
 const VitePluginAutoRoute = (options?: Options): Plugin => {
-  const { templatePath, pagesDir = 'src/pages', routesDir = 'src/routes', postRoute = '/add/route', getFilesInfo = '/files/info' } = options || {}
+  const {
+    templatePath,
+    pagesDir = 'src/pages',
+    routesDir = 'src/routes',
+    postRoute = '/add/route',
+    getFilesInfo = '/files/info',
+    showFullPath = true,
+  } = options || {}
+  isFullPath = showFullPath
+  basepath = pagesDir
   const template = templatePath ? fs.readFileSync(templatePath, 'utf-8') : defaultTemplate
   let alias
   return {
@@ -82,12 +97,13 @@ const VitePluginAutoRoute = (options?: Options): Plugin => {
             const reg = /(?<=routes: \[)([\s\S]*?)(?=\])/g
             const routeList = context.match(reg)?.[0].split(',').map(item => item.trim())
             // console.log(routeList);
+            req.headers['content-type'] = 'application/json'
+            return res.end(JSON.stringify({ code: 200, data: { name, path } }))
           })
         } else if (req.url === getFilesInfo) {
           const pagesPath = path.resolve(process.cwd(), pagesDir)
           const treeFiles = processDir(pagesPath)
           req.headers['content-type'] = 'application/json'
-          console.log(treeFiles);
           res.end(JSON.stringify(treeFiles))
           return
         }
@@ -107,10 +123,6 @@ const writeFileRecursive = function (path, buffer = '', callback?) {
     });
   });
 }
-let filterFile = ["node_modules", "\\..*"]; //过滤文件名，使用，隔开
-let isFullPath = true; //是否输出完整路径
-let basepath = "../"; //解析目录路径
-let pagesDir = "src/pages"; //解析目录路径
 
 function getPartPath(dirPath) {
   let base = basepath.split(/\/|\\/g);
@@ -140,7 +152,7 @@ function processDir(dirPath, dirTree: any = []) {
     const fileStat = fs.statSync(fullPath);
     const isFile = fileStat.isFile();
     const dir = {
-      name: (isFullPath ? getPartPath(fullPath) : itemPath).replace(process.cwd() + `/${pagesDir}`, ""),
+      name: (isFullPath ? getPartPath(fullPath) : itemPath).replace(process.cwd() + `/${rootPath}`, ""),
       children: [],
     };
     if (!isFile) {
