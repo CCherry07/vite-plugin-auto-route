@@ -59,7 +59,7 @@ const VitePluginAutoRoute = (options?: Options): Plugin => {
         const importList = context.match(importReg)?.map(item => item.slice(1, -1))
         // const routeList = context.match(reg)?.[0].split(',').map(item => item.trim())
         // 根据文件名 创建文件
-        console.log(importList);
+        // console.log(importList);
 
         importList?.forEach(item => {
           // 计算 ../ 的数量
@@ -78,7 +78,6 @@ const VitePluginAutoRoute = (options?: Options): Plugin => {
 
     configureServer(server) {
       server.middlewares.use((req, res, next) => {
-        // TODO: 根据请求的data，生成对应的路由，及其文件
         if (req.url === postRoute && req.method === 'POST') {
           let body = ''
           req.on('data', (chunk) => {
@@ -89,14 +88,10 @@ const VitePluginAutoRoute = (options?: Options): Plugin => {
             const filePath = path.resolve(process.cwd(), `./${dir}/${name}.vue`)
             req.headers['content-type'] = 'application/json'
             if (fs.existsSync(filePath)) {
-              console.log('name', name);
-              res.end(JSON.stringify({ code: 500, msg: '文件已存在' }), (...args) => {
-                console.log('args', args);
-              })
+              res.end(JSON.stringify({ code: 500, msg: '文件已存在' }))
               return
             } else {
               writeFileRecursive(filePath, template.replace("name", name))
-
               // 写入route 信息
               const routerPath = path.resolve(process.cwd(), routesDir)
               const currentFile = fs.readdirSync(routerPath).find(item => item.includes('index')) // 获取文件夹下的文件
@@ -119,13 +114,11 @@ const VitePluginAutoRoute = (options?: Options): Plugin => {
               })
 
               ss.overwrite(0, context.length, result)
-
               // const routeList = context.match(reg)?.[0].split(',').map(item => item.trim())
               fs.writeFileSync(fs.statSync(routerPath).isDirectory() ? `${routerPath}/${currentFile}` : routerPath, ss.toString())
 
               // console.log(routeList);
               res.end(JSON.stringify({ code: 200, data: { routeInfo } }))
-              console.log('name', name);
               return
             }
           })
