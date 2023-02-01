@@ -4,8 +4,9 @@
 </template>
 
 <script setup>
-import { getFilesInfo } from '../api'
+import { getFilesInfo, addRoute } from '../api'
 getFilesInfo()
+addRoute()
 </script>
 <style scoped>
 

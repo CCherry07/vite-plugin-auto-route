@@ -1,7 +1,7 @@
 import { Plugin } from 'vite'
 import fs from 'fs'
 import path from 'path'
-
+import MagicString from 'magic-string';
 let filterFile = ["node_modules", "\\..*"]; //过滤文件名，使用，隔开
 let basepath = "../"; //解析目录路径
 let isFullPath = true; //是否显示全路径
@@ -79,26 +79,53 @@ const VitePluginAutoRoute = (options?: Options): Plugin => {
     configureServer(server) {
       server.middlewares.use((req, res, next) => {
         // TODO: 根据请求的data，生成对应的路由，及其文件
-        if (req.url === postRoute) {
+        if (req.url === postRoute && req.method === 'POST') {
           let body = ''
           req.on('data', (chunk) => {
             body += chunk
           })
           req.on('end', () => {
-            const { name, path } = JSON.parse(body)
-            const filePath = path.resolve(process.cwd(), routesDir, `${path}/${name}.vue`)
-            if (!fs.existsSync(filePath)) {
-              writeFileRecursive(filePath, template.replace("name", name))
-            }
-            // 写入route 信息
-            const routerPath = path.resolve(process.cwd(), routesDir)
-            const currentFile = fs.readdirSync(routerPath).find(item => item.includes('index')) // 获取文件夹下的文件
-            const context = fs.readFileSync(fs.statSync(routerPath).isDirectory() ? `${routerPath}/${currentFile}` : routerPath, 'utf-8')
-            const reg = /(?<=routes: \[)([\s\S]*?)(?=\])/g
-            const routeList = context.match(reg)?.[0].split(',').map(item => item.trim())
-            // console.log(routeList);
+            const { name, path: routePath, dir, meta } = JSON.parse(body)
+            const filePath = path.resolve(process.cwd(), `./${dir}/${name}.vue`)
             req.headers['content-type'] = 'application/json'
-            return res.end(JSON.stringify({ code: 200, data: { name, path } }))
+            if (fs.existsSync(filePath)) {
+              console.log('name', name);
+              res.end(JSON.stringify({ code: 500, msg: '文件已存在' }))
+              return
+            } else {
+              writeFileRecursive(filePath, template.replace("name", name))
+
+              // 写入route 信息
+              const routerPath = path.resolve(process.cwd(), routesDir)
+              const currentFile = fs.readdirSync(routerPath).find(item => item.includes('index')) // 获取文件夹下的文件
+              const context = fs.readFileSync(fs.statSync(routerPath).isDirectory() ? `${routerPath}/${currentFile}` : routerPath, 'utf-8')
+              const ss = new MagicString(context)
+              const reg = /(?<=routes: \[)([\s\S]*?)(?=\])/g
+              // TODO: 生成路由信息 import 语句
+              const routeInfo = `{
+              path: '${routePath}',
+              name: '${name}',
+              component: () => import('..${dir}/${name}.vue'),
+              meta: {
+                title: '${name}',
+              }
+            }`
+
+              // 写入 routeInfo
+              const result = context.replace(reg, (match) => {
+                return match + ',' + routeInfo
+              })
+
+              ss.overwrite(0, context.length, result)
+
+              // const routeList = context.match(reg)?.[0].split(',').map(item => item.trim())
+              fs.writeFileSync(fs.statSync(routerPath).isDirectory() ? `${routerPath}/${currentFile}` : routerPath, ss.toString())
+
+              // console.log(routeList);
+              res.end(JSON.stringify({ code: 200, data: { routeInfo } }))
+              console.log('name', name);
+              return
+            }
           })
         } else if (req.url === getFilesInfo) {
           const pagesPath = path.resolve(process.cwd(), pagesDir)
@@ -116,7 +143,7 @@ const VitePluginAutoRoute = (options?: Options): Plugin => {
 const writeFileRecursive = function (path, buffer = '', callback?) {
   let lastPath = path.substring(0, path.lastIndexOf("/"));
   fs.mkdir(lastPath, { recursive: true }, (err) => {
-    if (err) return callback(err);
+    if (err) return callback?.(err);
     fs.writeFile(path, buffer, function (err) {
       if (err) return callback(err);
       return callback?.(null);
