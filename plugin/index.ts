@@ -102,7 +102,7 @@ const VitePluginAutoRoute = (options?: Options): Plugin => {
               const routeInfo = `{
               path: '${routePath}',
               name: '${name}',
-              component: () => import('..${dir}/${name}.vue'),
+              component: () => import('../pages/${name}.vue'),
               meta: {
                 title: '${name}',
               }
