@@ -4,8 +4,7 @@
 </template>
 
 <script setup>
-import { getFilesInfo } from '../api'
-getFilesInfo()
+
 </script>
 <style scoped>
 
