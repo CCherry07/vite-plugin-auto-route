@@ -11,14 +11,14 @@ const router = createRouter({
     {
       path: '/user',
       component: () => import('../pages/view/User.vue'),
-    }, , {
-      path: '/Test',
-      name: 'Test',
-      component: () => import('../pages/Test.vue'),
+    }, {
+      path: '/test',
+      name: 'test',
+      component: () => import('../pages/test.vue'),
       meta: {
-        title: 'Test',
+        title: 'test',
       }
-    }]
+    }],
 })
 
 

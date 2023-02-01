@@ -90,7 +90,9 @@ const VitePluginAutoRoute = (options?: Options): Plugin => {
             req.headers['content-type'] = 'application/json'
             if (fs.existsSync(filePath)) {
               console.log('name', name);
-              res.end(JSON.stringify({ code: 500, msg: '文件已存在' }))
+              res.end(JSON.stringify({ code: 500, msg: '文件已存在' }), (...args) => {
+                console.log('args', args);
+              })
               return
             } else {
               writeFileRecursive(filePath, template.replace("name", name))
@@ -133,8 +135,9 @@ const VitePluginAutoRoute = (options?: Options): Plugin => {
           req.headers['content-type'] = 'application/json'
           res.end(JSON.stringify(treeFiles))
           return
+        } else {
+          next()
         }
-        next()
       })
     }
   }
